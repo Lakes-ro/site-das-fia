@@ -7,13 +7,17 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: team_9zM2LKqO7ET4QnGLydabLOX0
+      VERCEL_PROJECT_ID: prj_nE8gV2Y24DZ6ZCGcYF3SUHtIAJOP
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel Environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
       - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: team_9zM2LKqO7ET4QnGLydabLOX0
-          vercel-project-id: prj_nE8gV2Y24DZ6ZCGcYF3SUHtIAJOP
-          vercel-args: '--prod'
+        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
