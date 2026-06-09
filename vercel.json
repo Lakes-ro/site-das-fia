@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "routes": [
+    { "src": "^/$", "dest": "/fias.html" },
+    { "src": "^/app$", "dest": "/app.html" },
+    { "handle": "filesystem" }
+  ]
+}

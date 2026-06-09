@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Cápsula do Tempo Digital - Espaço Familiar Privado">
+  <title>Cápsula do Tempo Digital</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0F172A">
+</head>
+<body class="landing-page">
+  <div class="landing-container">
+    <div class="hero-section">
+      <div class="logo-container">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="2"/>
+          <path d="M32 12v40M20 32h24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h1 class="hero-title">Cápsula do Tempo Digital</h1>
+      <p class="hero-subtitle">Um espaço privado e personalizado para nossa família</p>
+    </div>
+
+    <!-- Login -->
+    <div id="loginSection" class="auth-section">
+      <div class="auth-card">
+        <h2>Bem-vindo(a) de volta</h2>
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="loginEmail">Email</label>
+            <input type="email" id="loginEmail" required placeholder="seu@email.com" autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">Senha</label>
+            <input type="password" id="loginPassword" required placeholder="••••••••" autocomplete="current-password">
+          </div>
+          <button type="submit" class="btn-primary">Entrar</button>
+        </form>
+        <p class="auth-toggle">Não tem conta? <a href="#" id="showSignup">Criar conta</a></p>
+      </div>
+    </div>
+
+    <!-- Signup — SEM campo de role (definida pelo trigger no banco via e-mail) -->
+    <div id="signupSection" class="auth-section" style="display: none;">
+      <div class="auth-card">
+        <h2>Criar Conta</h2>
+        <form id="signupForm">
+          <div class="form-group">
+            <label for="signupName">Nome Completo</label>
+            <input type="text" id="signupName" required placeholder="Seu nome" autocomplete="name">
+          </div>
+          <div class="form-group">
+            <label for="signupUsername">Nome de Usuário</label>
+            <input type="text" id="signupUsername" required placeholder="usuario (sem @)" autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label for="signupEmail">Email</label>
+            <input type="email" id="signupEmail" required placeholder="seu@email.com" autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="signupPassword">Senha</label>
+            <input type="password" id="signupPassword" required placeholder="Mínimo 6 caracteres" autocomplete="new-password" minlength="6">
+          </div>
+          <!-- CAMPO DE ROLE REMOVIDO INTENCIONALMENTE -->
+          <!-- A role é definida pelo trigger no banco com base no e-mail do usuário -->
+          <button type="submit" class="btn-primary">Criar Conta</button>
+        </form>
+        <p class="auth-toggle">Já tem conta? <a href="#" id="showLogin">Fazer login</a></p>
+      </div>
+    </div>
+
+    <div id="authMessage" class="auth-message"></div>
+  </div>
+
+  <!-- ORDEM DOS SCRIPTS IMPORTA -->
+  <script src="config.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="supabase-client.js"></script>
+  <script src="auth.js"></script>
+</body>
+</html>
