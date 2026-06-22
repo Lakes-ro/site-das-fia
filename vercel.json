@@ -3,6 +3,7 @@
   "routes": [
     { "src": "^/$", "dest": "/fias.html" },
     { "src": "^/app$", "dest": "/app.html" },
-    { "handle": "filesystem" }
+    { "handle": "filesystem" },
+    { "src": ".*", "dest": "/404.html", "status": 404 }
   ]
 }

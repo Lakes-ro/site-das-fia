@@ -68,7 +68,6 @@ loginForm?.addEventListener('submit', async (e) => {
     setTimeout(() => { window.location.href = 'app.html'; }, 800);
   } catch (error) {
     console.error('Erro no login:', error);
-    // Mapeia erros comuns para mensagens amigáveis
     const friendlyErrors = {
       'Invalid login credentials': 'E-mail ou senha incorretos.',
       'Email not confirmed': 'Confirme seu e-mail antes de entrar.',
@@ -81,15 +80,12 @@ loginForm?.addEventListener('submit', async (e) => {
 });
 
 // ---- Signup ----
-// IMPORTANTE: apenas full_name e username são enviados no metadata.
-// O campo "role" é definido exclusivamente pelo trigger no banco,
-// nunca pelo cliente — proteção contra escalação de privilégio.
 
 signupForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const fullName = document.getElementById('signupName').value.trim();
-  const username = document.getElementById('signupUsername').value.trim().replace(/^@/, '');
+  const username = document.getElementById('signupUsername').value.trim().replace(/^@/, '').toLowerCase();
   const email    = document.getElementById('signupEmail').value.trim().toLowerCase();
   const password = document.getElementById('signupPassword').value;
 
@@ -111,24 +107,37 @@ signupForm?.addEventListener('submit', async (e) => {
   setLoading(signupForm, true);
 
   try {
+    // Verificar username duplicado ANTES de criar a conta
+    const { data: existing, error: checkError } = await supabaseClient
+      .from('profiles')
+      .select('id')
+      .eq('username', username)
+      .maybeSingle();
+
+    if (checkError) throw checkError;
+    if (existing) {
+      showMessage('❌ Este nome de usuário já está em uso.', 'error');
+      setLoading(signupForm, false);
+      return;
+    }
+
     const { data, error } = await supabaseClient.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: fullName,
-          username: username.toLowerCase()
+          username
           // NOTA DE SEGURANÇA: "role" NÃO é enviado aqui.
           // O trigger handle_new_user() no PostgreSQL define a role
           // automaticamente: rogerhugosantos@gmail.com → 'pai', demais → 'filha'.
-          // Qualquer tentativa de enviar role pelo cliente é ignorada pelo trigger.
         }
       }
     });
 
     if (error) throw error;
 
-    // Se confirmação de e-mail está desabilitada, Supabase retorna sessão imediatamente
+    // Se confirmação de e-mail está desabilitada, Supabase retorna sessão imediata
     if (data?.session) {
       showMessage('✅ Conta criada! Entrando...', 'success');
       setTimeout(() => { window.location.href = 'app.html'; }, 800);
@@ -142,6 +151,7 @@ signupForm?.addEventListener('submit', async (e) => {
         authMessage.textContent = '';
       }, 2500);
     }
+
   } catch (error) {
     console.error('Erro no signup:', error);
     const friendlyErrors = {

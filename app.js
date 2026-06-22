@@ -1,10 +1,16 @@
 // ============================================
 // ORQUESTRADOR PRINCIPAL DA APLICAÇÃO
-// Só executa após DOM + scripts carregados (DOMContentLoaded).
 // ============================================
 
 let currentUser    = null;
 let currentProfile = null;
+
+const DEFAULT_THEME = {
+  primary_color: '#8B5CF6',
+  bg_color: '#0F172A',
+  text_color: '#F8FAFC',
+  font_family: 'Inter'
+};
 
 // ---- Inicialização ----
 
@@ -17,23 +23,40 @@ const initApp = async () => {
       return;
     }
 
-    currentUser    = user;
-    currentProfile = await getProfile(user.id);
+    currentUser = user;
+
+    // Tentar carregar perfil — com retry se o trigger ainda não rodou
+    currentProfile = await _loadProfileWithRetry(user.id);
 
     if (!currentProfile) {
-      throw new Error('Perfil não encontrado. Contate o administrador.');
+      // Criar perfil manualmente como fallback se trigger falhou
+      const { data: created, error: createError } = await supabaseClient
+        .from('profiles')
+        .insert({
+          id:        user.id,
+          email:     user.email,
+          full_name: user.user_metadata?.full_name || user.email.split('@')[0],
+          username:  user.user_metadata?.username  || user.email.split('@')[0],
+          role:      user.email === 'rogerhugosantos@gmail.com' ? 'pai' : 'filha'
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Erro ao criar perfil fallback:', createError);
+        throw new Error('Não foi possível carregar seu perfil. Tente novamente.');
+      }
+      currentProfile = created;
     }
 
     document.getElementById('navUsername').textContent =
       currentProfile.username || currentProfile.full_name || 'Usuário';
 
-    // Tema carrega primeiro — evita flash de cor errada
     await loadUserTheme(user.id);
 
     setupMenu();
     await loadMyEntries();
 
-    // Realtime e contadores
     subscribeToFeed();
     subscribeToChatMessages(user.id);
     await updateUnreadCount();
@@ -43,8 +66,28 @@ const initApp = async () => {
   } catch (error) {
     console.error('❌ Falha ao inicializar:', error);
     alert(`Erro ao carregar o aplicativo: ${error.message}\nRedirecionando para login...`);
+    await supabaseClient.auth.signOut();
     window.location.href = 'fias.html';
   }
+};
+
+// Tenta carregar perfil até 3x (trigger pode demorar alguns ms)
+const _loadProfileWithRetry = async (userId, attempts = 3) => {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (data) return data;
+      if (error) throw error;
+    } catch (_) {}
+
+    if (i < attempts - 1) await new Promise(r => setTimeout(r, 600));
+  }
+  return null;
 };
 
 // ---- Menu por Role ----
@@ -62,7 +105,7 @@ const setupMenu = () => {
   }
 };
 
-// ---- Navegação (event delegation) ----
+// ---- Navegação ----
 
 document.querySelector('.sidebar-menu')?.addEventListener('click', (e) => {
   const item = e.target.closest('.menu-item');
@@ -99,17 +142,15 @@ const showView = (id) => {
   if (el) el.classList.add('active');
 };
 
-// ---- Chat: layout por role ----
+// ---- Chat ----
 
 const initChatView = () => {
   const contactsPanel = document.getElementById('chatContactsPanel');
-
   if (currentProfile?.role === 'pai') {
     if (contactsPanel) contactsPanel.style.display = 'flex';
   } else {
     if (contactsPanel) contactsPanel.style.display = 'none';
   }
-
   loadChatSelector();
 };
 
@@ -167,7 +208,7 @@ const loadAdminPanel = async () => {
   } catch (error) {
     console.error('Erro ao carregar painel admin:', error);
     familyMembersList.innerHTML = `<div class="error-message">Erro: ${error.message}</div>`;
-    allEntriesList.innerHTML    = '';
+    allEntriesList.innerHTML = '';
   }
 };
 
